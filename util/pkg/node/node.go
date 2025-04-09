@@ -30,7 +30,7 @@ type NodeStatus struct {
 	SystemInfo       string  `json:"systemInfo" gorm:"type:jsonb"`
 	IpInfo           string  `json:"ipinfo" gorm:"type:jsonb"`
 	IpGeoData        string  `json:"ipGeoData" gorm:"type:jsonb"`
-	NodeType         string  `json:"nodeType"`
+	NodeAccess       string  `json:"nodeAccess"`
 	NodeConfig       string  `json:"nodeConfig"`
 }
 
@@ -104,7 +104,7 @@ func CreateNodeStatus(address string, id string, startTimeStamp int64, name stri
 		SystemInfo:       ToJSON(GetOSInfo()),
 		IpInfo:           ToJSON(GetIPInfo()),
 		IpGeoData:        ToJSON(IpGeoAddress),
-		NodeType:         core.NodeType,
+		NodeAccess:       core.NodeAccess,
 		NodeConfig:       core.NodeConfig,
 	}
 
