@@ -27,6 +27,7 @@ var (
 	NodeName   string
 	ChainName  string
 	NodeConfig string
+	NodeAccess string
 )
 var WalletAddress string
 
@@ -279,8 +280,6 @@ func GenerateWalletAddressAptos(mnemonic string) {
 	WalletAddress = "0x" + hex.EncodeToString(walletAddress)
 	log.Println("Aptos Wallet Address:", WalletAddress)
 }
-
-
 
 func GetCodeHashAndVersion() (string, string) {
 	CodeHash = "4f5610aae32077a92ac570eeff5f3a404052fd94"
