@@ -26,7 +26,6 @@ var (
 var (
 	NodeName   string
 	ChainName  string
-	NodeType   string
 	NodeConfig string
 )
 var WalletAddress string
@@ -53,11 +52,11 @@ func LoadNodeDetails() {
 	}
 	fmt.Printf("Chain Name: %s\n", ChainName)
 
-	NodeType = os.Getenv("NODE_TYPE")
-	if NodeType == "" {
-		log.Fatalf("NODE_TYPE environment variable is not set")
+	NodeAccess = os.Getenv("NODE_ACCESS")
+	if NodeAccess == "" {
+		log.Fatalf("NODE_ACCESS environment variable is not set")
 	}
-	fmt.Printf("Node Type: %s\n", NodeType)
+	fmt.Printf("Node ACCESS: %s\n", NodeAccess)
 
 	NodeConfig = os.Getenv("NODE_CONFIG")
 	if NodeConfig == "" {

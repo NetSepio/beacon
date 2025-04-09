@@ -22,7 +22,7 @@ display_header() {
     echo -e "${cyan}     ██╔══╝  ██╔══██╗██╔══╝  ██╔══██╗██╔══██╗██║   ██║╚════██║${reset}"
     echo -e "${cyan}     ███████╗██║  ██║███████╗██████╔╝██║  ██║╚██████╔╝███████║${reset}"
     echo -e "${cyan}     ╚══════╝╚═╝  ╚═╝╚══════╝╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚══════╝${reset}"
-    echo -e "${cyan}                                                         ${reset}"
+    echo -e "${cyan}                                                         ${reset}"9
     echo
     echo -e "${yellow}                                                  [ BEACON ]${reset}"
     echo -e "${dim}                                           Powered by NetSepio${reset}"
@@ -32,7 +32,7 @@ display_header() {
     echo -e "${bold}${cyan}║${reset}            ${cyan}Requirements:${reset}                                        ${bold}${cyan}║${reset}"
     echo -e "${bold}${cyan}║${reset}            ${dim}1.${reset} Public IP with internet routing                   ${bold}${cyan}║${reset}"
     echo -e "${bold}${cyan}║${reset}               ${dim}• Node requires public IP accessibility${reset}           ${bold}${cyan}║${reset}"
-    echo -e "${bold}${cyan}║${reset}            ${dim}2.${reset} Open ports: ${cyan}9080${reset}, ${cyan}9002${reset}, ${cyan}51820${reset}                     ${bold}${cyan}║${reset}"
+    echo -e "${bold}${cyan}║${reset}            ${dim}2.${reset} Open ports: ${cyan}9080${reset9}, ${cyan}9002${reset}, ${cyan}51820${reset}                     ${bold}${cyan}║${reset}"
     echo -e "${bold}${cyan}║${reset}               ${dim}• Required for proper node operation${reset}              ${bold}${cyan}║${reset}"
     echo -e "${bold}${cyan}╚═════════════════════════════════════════════════════════════════╝${reset}"
     echo
@@ -301,12 +301,12 @@ check_mnemonic_format() {
 
 print_final_message() {
     if check_node_status; then
-        printf "\e[32mErebrus node installation is finished.\e[0m\n"
-        printf "Erebrus Node API is accessible at http://${HOST_IP}:9080\n"
-        printf "Refer \e[4mhttps://github.com/NetSepio/erebrus/blob/main/docs/docs.md\e[0m for API documentation.\n"
+        printf "\e[32mErebrus Beacon node installation is finished.\e[0m\n"
+        printf "Beacon Node API is accessible at http://${HOST_IP}:9080\n"
+        printf "Refer \e[4mhttps://github.com/NetSepio/beacon/blob/main/docs/docs.md\e[0m for API documentation.\n"
         printf "\n\e[32mAll stages completed successfully!\e[0m\n\n"
     else
-        printf "\e[31mFailed to run Erebrus node.\e[0m\n"
+        printf "\e[31mFailed to run Erebrus Beacon node.\e[0m\n"
     fi
 }
 
@@ -448,7 +448,7 @@ configure_node() {
     test_ip_reachability "$HOST_IP"
     if [ $? -eq 1 ]; then
         status_stage2="\e[31mFailed\e[0m\n"
-        error_stage2="\e[31mFailed to configure Erebrus node.\e[0m\n"
+        error_stage2="\e[31mFailed to configure Beacon node.\e[0m\n"
         return 1
     else
     # Write environment variables to .env file
@@ -465,15 +465,12 @@ NODE_NAME=${NODE_NAME}
 DOMAIN=${DEFAULT_DOMAIN}
 HOST_IP=${HOST_IP}
 GATEWAY_DOMAIN=https://gateway.erebrus.io
-POLYGON_RPC=
 SIGNED_BY=NetSepio
-FOOTER=NetSepio 2024
+FOOTER=NetSepio 2025
 GATEWAY_WALLET=0x0
-GATEWAY_DOMAIN=https://gateway.erebrus.io
 LOAD_CONFIG_FILE=false
 GATEWAY_PEERID=/ip4/178.156.141.248/tcp/9001/p2p/12D3KooWJSMKigKLzehhhmppTjX7iQprA7558uU52hqvKqyjbELf
 CHAIN_NAME=${CHAIN}
-NODE_TYPE=VPN
 NODE_CONFIG=${CONFIG}
 MNEMONIC=${WALLET_MNEMONIC}
 CONTRACT_ADDRESS=${CONTRACT_ADDRESS}
@@ -498,17 +495,12 @@ WG_PRE_UP=echo WireGuard PreUp
 WG_POST_UP=iptables -A FORWARD -i %i -j ACCEPT; iptables -A FORWARD -o %i -j ACCEPT; iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
 WG_PRE_DOWN=echo WireGuard PreDown
 WG_POST_DOWN=iptables -D FORWARD -i %i -j ACCEPT; iptables -D FORWARD -o %i -j ACCEPT; iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE
-SERVICE_CONF_DIR=./erebrus
 
 # Authentication & Policies
 PASETO_EXPIRATION_IN_HOURS=168
 AUTH_EULA=I Accept the Erebrus Terms of Service https://erebrus.io/terms
 
 
-
-# Caddy Specifications
-CADDY_CONF_DIR=/etc/caddy # /etc/caddy
-CADDY_INTERFACE_NAME=Caddyfile
 
 EOL
         status_stage2="\e[32m$green_tick Complete\e[0m"
@@ -519,10 +511,10 @@ EOL
 # Function to run the Node container
 run_node() {
     clear
-    printf "\n\e[1mRunning Erebrus Node...\e[0m"
+    printf "\n\e[1mRunning Beacon Node...\e[0m"
     status_stage3="\e[34mIn Progress\e[0m"
     display_header
-    printf "Starting Erebrus Node... "
+    printf "Starting Beacon Node... "
     ENV_FILE="${INSTALL_DIR}/.env"
     sleep 2
     if [ ! -f "$ENV_FILE" ]; then
@@ -535,7 +527,7 @@ run_node() {
         --sysctl="net.ipv4.conf.all.src_valid_mark=1" \
         --sysctl="net.ipv6.conf.all.forwarding=1" \
         --restart unless-stopped -v "${INSTALL_DIR}/wireguard:/etc/wireguard" \
-        --name erebrus --env-file "${ENV_FILE}" ghcr.io/netsepio/erebrus:main > /dev/null 2> error.log) &
+        --name beacon --env-file "${ENV_FILE}" ghcr.io/netsepio/beacon:main > /dev/null 2> error.log) &
     show_spinner $!
     wait $!
 
@@ -544,7 +536,7 @@ run_node() {
         error_stage3=""
     else
         status_stage3="\e[31mFailed\e[0m"
-        error_stage3="\e[31mFailed to run Erebrus node. See error.log for details.\e[0m\n"
+        error_stage3="\e[31mFailed to run Beacon node. See error.log for details.\e[0m\n"
     fi
     display_header
 }
@@ -570,8 +562,8 @@ if check_node_status; then
     status_stage2="\e[33m$skipped_symbol Skipped\e[0m"
     status_stage3="\e[33m$skipped_symbol Skipped\e[0m"
     display_header
-    printf "\e[31mErebrus node is already installed and running. Aborting installation.\e[0m\n"
-    printf "Refer \e[4mhttps://github.com/NetSepio/erebrus/blob/main/docs/docs.md\e[0m for API documentation.\n\n"
+    printf "\e[31mBeacon node is already installed and running. Aborting installation.\e[0m\n"
+    printf "Refer \e[4mhttps://github.com/NetSepio/beacon/blob/main/docs/docs.md\e[0m for API documentation.\n\n"
     exit 0
 fi
 
