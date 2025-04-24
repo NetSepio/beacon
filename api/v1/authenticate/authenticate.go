@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/NetSepio/erebrus/api/v1/authenticate/challengeid"
-	"github.com/NetSepio/erebrus/util/pkg/auth"
-	"github.com/NetSepio/erebrus/util/pkg/claims"
+	"github.com/NetSepio/beacon/api/v1/authenticate/challengeid"
+	"github.com/NetSepio/beacon/util/pkg/auth"
+	"github.com/NetSepio/beacon/util/pkg/claims"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"

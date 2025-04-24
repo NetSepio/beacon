@@ -11,10 +11,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/NetSepio/erebrus/model"
-	"github.com/NetSepio/erebrus/storage"
-	"github.com/NetSepio/erebrus/template"
-	"github.com/NetSepio/erebrus/util"
+	"github.com/NetSepio/beacon/model"
+	"github.com/NetSepio/beacon/storage"
+	"github.com/NetSepio/beacon/template"
+	"github.com/NetSepio/beacon/util"
 	log "github.com/sirupsen/logrus"
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 )
@@ -231,29 +231,4 @@ func GetServerStatus() (*model.Status, error) {
 	return response, nil
 }
 
-// success response message
-func MakeSucessResponse(status int64, message string, server *model.Server, client *model.Client, clients []*model.Client) *model.Response {
-	return &model.Response{
-		Status:  status,
-		Message: message,
-		Server:  server,
-		Client:  client,
-		Clients: clients,
-		Success: true,
-		Error:   "",
-	}
-}
 
-// error response message
-func MakeErrorResponse(status int64, err string, server *model.Server, client *model.Client, clients []*model.Client) *model.Response {
-	return &model.Response{
-		Status:  status,
-		Message: "",
-		Server:  server,
-		Client:  client,
-		Clients: clients,
-		Success: false,
-		Error:   err,
-	}
-
-}

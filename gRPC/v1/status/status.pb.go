@@ -7,7 +7,7 @@
 package status
 
 import (
-	model "github.com/NetSepio/erebrus/model"
+	model "github.com/NetSepio/beacon/model"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"

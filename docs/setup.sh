@@ -25,4 +25,4 @@ newgrp docker
 sudo systemctl start docker
 sudo systemctl enable docker
 
-docker run -d -p 9080:9080/tcp -p 51820:51820/udp --cap-add=NET_ADMIN --cap-add=SYS_MODULE --sysctl="net.ipv4.conf.all.src_valid_mark=1" --sysctl="net.ipv6.conf.all.forwarding=1" --restart unless-stopped --name erebrus --env-file .env ghcr.io/netsepio/erebrus:main
+docker run -d -p 9080:9080/tcp -p 51820:51820/udp --cap-add=NET_ADMIN --cap-add=SYS_MODULE --sysctl="net.ipv4.conf.all.src_valid_mark=1" --sysctl="net.ipv6.conf.all.forwarding=1" --restart unless-stopped --name erebrus --env-file .env ghcr.io/netsepio/beacon:main

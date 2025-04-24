@@ -3,8 +3,8 @@ package status
 import (
 	"net/http"
 
-	"github.com/NetSepio/erebrus/core"
-	"github.com/NetSepio/erebrus/util"
+	"github.com/NetSepio/beacon/core"
+	"github.com/NetSepio/beacon/util"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"

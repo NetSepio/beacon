@@ -1,4 +1,4 @@
-module github.com/NetSepio/erebrus
+module github.com/NetSepio/beacon
 
 go 1.23.4
 

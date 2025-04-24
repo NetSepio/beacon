@@ -6,7 +6,7 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/NetSepio/erebrus/core"
+	"github.com/NetSepio/beacon/core"
 )
 
 var (

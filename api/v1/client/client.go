@@ -3,9 +3,9 @@ package client
 import (
 	"net/http"
 
-	"github.com/NetSepio/erebrus/core"
-	"github.com/NetSepio/erebrus/model"
-	"github.com/NetSepio/erebrus/util"
+	"github.com/NetSepio/beacon/core"
+	"github.com/NetSepio/beacon/model"
+	"github.com/NetSepio/beacon/util"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 	"github.com/skip2/go-qrcode"
@@ -42,7 +42,7 @@ func registerClient(c *gin.Context) {
 			"err": err,
 		}).Error("failed to bind")
 
-		response := core.MakeErrorResponse(400, err.Error(), nil, nil, nil)
+		response := util.MakeErrorResponse(400, err.Error(), nil, nil, nil)
 		c.JSON(http.StatusUnprocessableEntity, response)
 		return
 	}
@@ -53,18 +53,18 @@ func registerClient(c *gin.Context) {
 			"err": err,
 		}).Error("failed to create client")
 
-		response := core.MakeErrorResponse(500, err.Error(), nil, nil, nil)
+		response := util.MakeErrorResponse(500, err.Error(), nil, nil, nil)
 		c.JSON(http.StatusInternalServerError, response)
 		return
 	}
 	server, err := core.ReadServer()
 	if err != nil {
 		log.WithFields(util.StandardFields).Error("Failure in reading server")
-		response := core.MakeErrorResponse(500, err.Error(), nil, nil, nil)
+		response := util.MakeErrorResponse(500, err.Error(), nil, nil, nil)
 		c.JSON(http.StatusInternalServerError, response)
 		return
 	}
-	response := core.MakeSucessResponse(201, "client created", server, client, nil)
+	response := util.MakeSucessResponse(201, "client created", server, client, nil)
 
 	c.JSON(http.StatusOK, response)
 }
@@ -89,12 +89,12 @@ func readClient(c *gin.Context) {
 			"err": err,
 		}).Error("failed to read client")
 
-		response := core.MakeErrorResponse(500, err.Error(), nil, nil, nil)
+		response := util.MakeErrorResponse(500, err.Error(), nil, nil, nil)
 		c.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
-	response := core.MakeSucessResponse(200, "client details", nil, client, nil)
+	response := util.MakeSucessResponse(200, "client details", nil, client, nil)
 
 	c.JSON(http.StatusOK, response)
 }
@@ -118,7 +118,7 @@ func updateClient(c *gin.Context) {
 			"err": err,
 		}).Error("failed to bind")
 
-		response := core.MakeErrorResponse(400, err.Error(), nil, nil, nil)
+		response := util.MakeErrorResponse(400, err.Error(), nil, nil, nil)
 		c.JSON(http.StatusUnprocessableEntity, response)
 		return
 	}
@@ -129,12 +129,12 @@ func updateClient(c *gin.Context) {
 			"err": err,
 		}).Error("failed to update client")
 
-		response := core.MakeErrorResponse(500, err.Error(), nil, nil, nil)
+		response := util.MakeErrorResponse(500, err.Error(), nil, nil, nil)
 		c.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
-	response := core.MakeSucessResponse(200, "client updated", nil, client, nil)
+	response := util.MakeSucessResponse(200, "client updated", nil, client, nil)
 
 	c.JSON(http.StatusOK, response)
 }
@@ -157,12 +157,12 @@ func deleteClient(c *gin.Context) {
 		log.WithFields(log.Fields{
 			"err": err,
 		}).Error("failed to remove client")
-		response := core.MakeErrorResponse(500, err.Error(), nil, nil, nil)
+		response := util.MakeErrorResponse(500, err.Error(), nil, nil, nil)
 		c.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
-	response := core.MakeSucessResponse(200, "client deleted", nil, nil, nil)
+	response := util.MakeSucessResponse(200, "client deleted", nil, nil, nil)
 	c.JSON(http.StatusOK, response)
 }
 
@@ -183,12 +183,12 @@ func readClients(c *gin.Context) {
 			"err": err,
 		}).Error("failed to list clients")
 
-		response := core.MakeErrorResponse(500, err.Error(), nil, nil, nil)
+		response := util.MakeErrorResponse(500, err.Error(), nil, nil, nil)
 		c.JSON(http.StatusInternalServerError, response)
 		return
 	}
 
-	response := core.MakeSucessResponse(200, "clients details", nil, nil, clients)
+	response := util.MakeSucessResponse(200, "clients details", nil, nil, clients)
 
 	c.JSON(http.StatusOK, response)
 }

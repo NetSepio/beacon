@@ -3,9 +3,9 @@ package client
 import (
 	"context"
 
-	"github.com/NetSepio/erebrus/core"
-	"github.com/NetSepio/erebrus/model"
-	"github.com/NetSepio/erebrus/util"
+	"github.com/NetSepio/beacon/core"
+	"github.com/NetSepio/beacon/model"
+	"github.com/NetSepio/beacon/util"
 	log "github.com/sirupsen/logrus"
 )
 

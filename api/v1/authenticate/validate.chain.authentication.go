@@ -11,7 +11,7 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/NetSepio/erebrus/api/v1/authenticate/challengeid"
+	"github.com/NetSepio/beacon/api/v1/authenticate/challengeid"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/minio/blake2b-simd"

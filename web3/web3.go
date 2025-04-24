@@ -1,4 +1,4 @@
-package core
+package web3
 
 import (
 	"crypto/sha256"
@@ -17,7 +17,7 @@ import (
 	"strconv"
 	"time"
 	
-	"github.com/NetSepio/erebrus/contract"
+	"github.com/NetSepio/beacon/contract"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -295,9 +295,6 @@ func getSystemMetadata() (string, error) {
 		return "", fmt.Errorf("failed to get disk stats: %v", err)
 	}
 
-	// Get version and code hash
-	codeHash, version := GetCodeHashAndVersion()
-
 	metadata := SystemMetadata{
 		OS:              runtime.GOOS,
 		Architecture:    runtime.GOARCH,
@@ -317,8 +314,8 @@ func getSystemMetadata() (string, error) {
 		FreeDisk:       diskInfo.Free,
 		CPUUsage:       getCPUUsage(),
 		// Version info
-		Version:        version,
-		CodeHash:       codeHash,
+		Version:        Version,
+		CodeHash:       CodeHash,
 	}
 
 	// Print the metadata in a formatted way

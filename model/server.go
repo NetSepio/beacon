@@ -3,7 +3,7 @@ package model
 import (
 	"fmt"
 
-	"github.com/NetSepio/erebrus/util"
+	"github.com/NetSepio/beacon/util"
 
 	"golang.zx2c4.com/wireguard/wgctrl"
 	// "golang.zx2c4.com/wireguard/wgctrl/wgtypes"

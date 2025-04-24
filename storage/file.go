@@ -5,8 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/NetSepio/erebrus/model"
-	"github.com/NetSepio/erebrus/util"
+	"github.com/NetSepio/beacon/model"
+	"github.com/NetSepio/beacon/util"
 )
 
 // Serialize write interface to disk

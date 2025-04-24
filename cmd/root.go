@@ -1,11 +1,33 @@
-package core
+package cmd
 
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"time"
 
-	"github.com/NetSepio/erebrus/util"
+	"github.com/NetSepio/beacon/core"
+	"github.com/NetSepio/beacon/util"
 	"github.com/spf13/cobra"
+	"github.com/gin-gonic/gin"
+	"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/static"
+	"github.com/patrickmn/go-cache"
+	"github.com/NetSepio/beacon/p2p"
+	helmet "github.com/danielkov/gin-helmet"
+	log "github.com/sirupsen/logrus"
+)
+
+var (
+	// ANSI color codes
+	colorReset  = "\033[0m"
+	colorRed    = "\033[31m"
+	colorGreen  = "\033[32m"
+	colorYellow = "\033[33m"
+	colorBlue   = "\033[34m"
+	colorPurple = "\033[35m"
+	colorCyan   = "\033[36m"
+	colorWhite  = "\033[37m"
 )
 
 var rootCmd = &cobra.Command{
@@ -23,7 +45,21 @@ var versionCmd = &cobra.Command{
 		fmt.Printf("%s📦 Erebrus Version%s\n", colorGreen, colorReset)
 		fmt.Printf("%s%s%s\n", colorYellow, "====================================", colorReset)
 		fmt.Printf("%s🔖 Version:%s %s\n", colorCyan, colorReset, util.Version)
+		fmt.Printf("%s🔖 Code Hash:%s %s\n", colorCyan, colorReset, util.CodeHash)
+		fmt.Printf("%s🔖 Go Version:%s %s\n", colorCyan, colorReset, util.GoVersion)
 		fmt.Printf("%s%s%s\n\n", colorYellow, "====================================", colorReset)
+	},
+}
+
+var deactivateCmd = &cobra.Command{
+	Use:   "deactivate",
+	Short: "Deactivate the Erebrus node",
+	Run: func(cmd *cobra.Command, args []string) {
+		if err := core.DeactivateNode(); err != nil {
+			fmt.Printf("\n%s❌ Error: %s%s\n", colorRed, err.Error(), colorReset)
+			os.Exit(1)
+		}
+		fmt.Printf("%s✅ Node successfully deactivated%s\n", colorGreen, colorReset)
 	},
 }
 
@@ -31,13 +67,11 @@ var statusCmd = &cobra.Command{
 	Use:   "status",
 	Short: "Show the current status of the Erebrus node",
 	Run: func(cmd *cobra.Command, args []string) {
-		status, err := GetNodeStatus()
+		status, err := core.GetNodeStatus()
 		if err != nil {
-			fmt.Printf("\n%s%s%s\n", colorRed, err.Error(), colorReset)
+			fmt.Printf("\n%s❌ Error: %s%s\n", colorRed, err.Error(), colorReset)
 			os.Exit(1)
 		}
-
-		// Print node status
 		fmt.Printf("\n%s%s%s\n", colorYellow, "====================================", colorReset)
 		fmt.Printf("%s📊 Node Status%s\n", colorGreen, colorReset)
 		fmt.Printf("%s%s%s\n", colorYellow, "====================================", colorReset)
@@ -47,55 +81,25 @@ var statusCmd = &cobra.Command{
 		fmt.Printf("%s⚙️  Config:%s %s\n", colorCyan, colorReset, status.Config)
 		fmt.Printf("%s🌐 IP Address:%s %s\n", colorCyan, colorReset, status.IPAddress)
 		fmt.Printf("%s🗺  Region:%s %s\n", colorCyan, colorReset, status.Region)
-		fmt.Printf("%s📍 Location:%s %s\n", colorCyan, colorReset, status.Location)
-		fmt.Printf("%s👤 Owner:%s %s\n", colorCyan, colorReset, status.Owner.Hex())
-		fmt.Printf("%s🎫 Token ID:%s %v\n", colorCyan, colorReset, status.TokenID)
-		fmt.Printf("%s%s Status:%s %s %s\n", colorCyan, status.GetStatusEmoji(), colorReset, status.GetStatusText(), colorReset)
-
-		if status.Checkpoint != "" {
-			fmt.Printf("%s📡 Latest Checkpoint:%s %s\n", colorCyan, colorReset, status.Checkpoint)
-		}
-		
 		fmt.Printf("%s%s%s\n\n", colorYellow, "====================================", colorReset)
 	},
 }
 
-var deactivateCmd = &cobra.Command{
-	Use:   "deactivate",
-	Short: "Deactivate the Erebrus node",
+var daemonCmd = &cobra.Command{
+	Use:   "daemon",
+	Short: "Run the Erebrus node as a daemon",
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := DeactivateNode(); err != nil {
-			fmt.Printf("\n%s❌ Error: %s%s\n", colorRed, err.Error(), colorReset)
-			os.Exit(1)
-		}
-		fmt.Printf("%s✅ Node successfully deactivated%s\n", colorGreen, colorReset)
+		core.RunBeaconNode()
 	},
-}
-
-var activateCmd = &cobra.Command{
-	Use:   "activate",
-	Short: "Activate the Erebrus node",
-	Run: func(cmd *cobra.Command, args []string) {
-		if err := ActivateNode(); err != nil {
-			fmt.Printf("\n%s❌ Error: %s%s\n", colorRed, err.Error(), colorReset)
-			os.Exit(1)
-		}
-		fmt.Printf("%s✅ Node successfully activated%s\n", colorGreen, colorReset)
-	},
-}
-
-// Execute adds all child commands to the root command and sets flags appropriately.
-func Execute() {
-	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
 }
 
 func init() {
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(statusCmd)
 	rootCmd.AddCommand(deactivateCmd)
-	rootCmd.AddCommand(activateCmd)
+	rootCmd.AddCommand(daemonCmd)
 }
 
+func Execute() error {
+	return rootCmd.Execute()
+} 

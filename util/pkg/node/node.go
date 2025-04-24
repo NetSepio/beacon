@@ -6,8 +6,8 @@ import (
 	"os"
 	"unicode"
 
-	"github.com/NetSepio/erebrus/core"
-	"github.com/NetSepio/erebrus/util/pkg/speedtest"
+	"github.com/NetSepio/beacon/core"
+	"github.com/NetSepio/beacon/util/pkg/speedtest"
 	"github.com/sirupsen/logrus"
 )
 

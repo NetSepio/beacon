@@ -6,283 +6,356 @@ import (
 	"encoding/hex"
 	"fmt"
 	"log"
+	"net"
 	"os"
-	"strings"
+	"path/filepath"
+	"sync"
+	"time"
 
+	"github.com/NetSepio/beacon/api"
+	grpc "github.com/NetSepio/beacon/gRPC"
+	"github.com/NetSepio/beacon/p2p"
+	"github.com/NetSepio/beacon/util"
+	"github.com/NetSepio/beacon/web3"
 	"github.com/blocto/solana-go-sdk/pkg/hdwallet"
 	"github.com/blocto/solana-go-sdk/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/static"
+	"github.com/gin-gonic/gin"
+	"github.com/patrickmn/go-cache"
 	"github.com/tyler-smith/go-bip32"
 	"github.com/tyler-smith/go-bip39"
 	"golang.org/x/crypto/sha3"
+	helmet "github.com/danielkov/gin-helmet"
 )
+
+var wg sync.WaitGroup
 
 // These variables will be set at build time
 var (
-	Version  string
-	CodeHash string
+	NodeID      string
+	NodeName    string
+	NodeSpec    string
+	NodeConfig  string
+	NodeAccess  string
+	NodeRegion  string
+	NodeIP      string
+	NodeVersion string
 )
 
-var (
-	NodeName   string
-	ChainName  string
-	NodeConfig string
-	NodeAccess string
-)
-var WalletAddress string
-
-// Function to load the node details from the environment and save it to the global variable
+// LoadNodeDetails loads the node details from environment variables
 func LoadNodeDetails() {
-	// Get the CHAIN_NAME variable from the environment
+	NodeID = os.Getenv("NODE_ID")
 	NodeName = os.Getenv("NODE_NAME")
-
-	ChainName = os.Getenv("CHAIN_NAME")
-	if ChainName == "" {
-		log.Fatalf("CHAIN_NAME environment variable is not set")
-	} else {
-		ChainName = strings.ToLower(ChainName)
-		if ChainName == "solana" || ChainName == "eclipse" {
-			GenerateWalletAddressSolanaAndEclipse(os.Getenv("MNEMONIC"))
-		} else if ChainName == "ethereum" {
-			GenerateEthereumWalletAddress(os.Getenv("MNEMONIC"))
-		} else if ChainName == "sui" {
-			GenerateWalletAddressSui(os.Getenv("MNEMONIC"))
-		} else if ChainName == "aptos" {
-			GenerateWalletAddressAptos(os.Getenv("MNEMONIC"))
-		}
-	}
-	fmt.Printf("Chain Name: %s\n", ChainName)
-
-	NodeAccess = os.Getenv("NODE_ACCESS")
-	if NodeAccess == "" {
-		log.Fatalf("NODE_ACCESS environment variable is not set")
-	}
-	fmt.Printf("Node ACCESS: %s\n", NodeAccess)
-
+	NodeSpec = os.Getenv("NODE_SPEC")
 	NodeConfig = os.Getenv("NODE_CONFIG")
+	NodeAccess = os.Getenv("NODE_ACCESS")
+	NodeRegion = os.Getenv("NODE_REGION")
+	NodeIP = os.Getenv("NODE_IP")
+	NodeVersion = os.Getenv("NODE_VERSION")
+
+	if NodeID == "" {
+		log.Fatal("NODE_ID environment variable is not set")
+	}
+	if NodeName == "" {
+		log.Fatal("NODE_NAME environment variable is not set")
+	}
+	if NodeSpec == "" {
+		log.Fatal("NODE_SPEC environment variable is not set")
+	}
 	if NodeConfig == "" {
-		log.Fatalf("NODE_CONFIG environment variable is not set")
+		log.Fatal("NODE_CONFIG environment variable is not set")
 	}
-	fmt.Printf("Node Config: %s\n", NodeConfig)
+	if NodeAccess == "" {
+		log.Fatal("NODE_ACCESS environment variable is not set")
+	}
+	if NodeRegion == "" {
+		log.Fatal("NODE_REGION environment variable is not set")
+	}
+	if NodeIP == "" {
+		log.Fatal("NODE_IP environment variable is not set")
+	}
+	if NodeVersion == "" {
+		log.Fatal("NODE_VERSION environment variable is not set")
+	}
 }
 
-// GenerateEthereumWalletAddress generates an Ethereum wallet address from the given mnemonic
-func GenerateEthereumWalletAddress(mnemonic string) (string, *ecdsa.PrivateKey, error) {
-	// Validate the mnemonic
-	if !bip39.IsMnemonicValid(mnemonic) {
-		log.Fatal("Invalid mnemonic")
-	}
+func RungRPCServer() {
+	grpc_server := grpc.Initialize()
+	port := os.Getenv("GRPC_PORT")
 
-	// Derive a seed from the mnemonic
-	seed := bip39.NewSeed(mnemonic, "")
+	log.Printf("Starting gRPC Api, Listening on Port : %s", port)
 
-	// Generate a master key using BIP32
-	masterKey, err := bip32.NewMasterKey(seed)
+	listener, err := net.Listen("tcp", ":"+port)
 	if err != nil {
-		log.Fatal(err)
+		wg.Done()
+		log.Fatal("Unable to listen on port", port)
 	}
 
-	// Derive a child key (using the Ethereum derivation path m/44'/60'/0'/0/0)
-	childKey, err := masterKey.NewChildKey(bip32.FirstHardenedChild + 44)
-	if err != nil {
-		log.Fatal(err)
+	//Server GRPC
+	if err := grpc_server.Serve(listener); err != nil {
+		wg.Done()
+		log.Fatal("Failed to create GRPC server!")
 	}
-	childKey, err = childKey.NewChildKey(bip32.FirstHardenedChild + 60)
-	if err != nil {
-		log.Fatal(err)
-	}
-	childKey, err = childKey.NewChildKey(bip32.FirstHardenedChild + 0)
-	if err != nil {
-		log.Fatal(err)
-	}
-	childKey, err = childKey.NewChildKey(0)
-	if err != nil {
-		log.Fatal(err)
-	}
-	childKey, err = childKey.NewChildKey(0)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Generate ECDSA private key from the child key
-	privateKey, err := crypto.ToECDSA(childKey.Key)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Get the public key in uncompressed format
-	publicKey := privateKey.Public().(*ecdsa.PublicKey)
-	publicKeyBytes := crypto.FromECDSAPub(publicKey)
-
-	// log.Println("Private Key:", hex.EncodeToString(crypto.FromECDSA(privateKey)))
-	// log.Println("Public Key:", hex.EncodeToString(publicKeyBytes))
-
-	// Generate the Ethereum address
-	keccak := sha3.NewLegacyKeccak256()
-	keccak.Write(publicKeyBytes[1:])      // Skip the first byte (0x04) of the uncompressed public key
-	walletAddress := keccak.Sum(nil)[12:] // Take the last 20 bytes
-
-	// Convert to checksummed address
-	WalletAddress = toChecksumAddress(hex.EncodeToString(walletAddress))
-	// log.Println("Ethereum Wallet Address:", WalletAddress)
-	return WalletAddress, privateKey, nil
+	wg.Done()
 }
 
-// toChecksumAddress converts an address to checksummed format
-func toChecksumAddress(address string) string {
-	address = strings.ToLower(address)
-	keccak := sha3.NewLegacyKeccak256()
-	keccak.Write([]byte(address))
-	hash := keccak.Sum(nil)
+// RunBeaconNode starts the Beacon node
+func RunBeaconNode() {
+	log.Printf("Starting NetSepio - Erebrus Version: %s", util.Version)
 
-	var checksumAddress strings.Builder
-	checksumAddress.WriteString("0x")
-
-	for i, c := range address {
-		if c >= '0' && c <= '9' {
-			checksumAddress.WriteRune(c)
-		} else {
-			if hash[i/2]>>uint(4*(1-i%2))&0xF >= 8 {
-				checksumAddress.WriteRune(c - 'a' + 'A')
-			} else {
-				checksumAddress.WriteRune(c)
-			}
+	// check directories or create it
+	if !util.DirectoryExists(filepath.Join(os.Getenv("WG_CONF_DIR"))) {
+		err := os.Mkdir(os.Getenv("WG_CONF_DIR"), 0755)
+		if err != nil {
+			log.Fatalf("failed to create wireguard configuration directory: %v", err)
 		}
 	}
 
-	return checksumAddress.String()
+	// check directories or create it
+	if !util.DirectoryExists(filepath.Join(os.Getenv("WG_CLIENTS_DIR"))) {
+		err := os.Mkdir(os.Getenv("WG_CLIENTS_DIR"), 0755)
+		if err != nil {
+			log.Fatalf("failed to create wireguard clients directory: %v", err)
+		}
+	}
+
+	// check if server.json exists otherwise create it with default values
+	if !util.FileExists(filepath.Join(os.Getenv("WG_CONF_DIR"), "server.json")) {
+		_, err := ReadServer()
+		if err != nil {
+			log.Fatal("server.json does not exist and unable to open")
+		}
+	}
+
+	if os.Getenv("RUNTYPE") == "debug" {
+		// set gin release debug
+		gin.SetMode(gin.DebugMode)
+	} else {
+		// set gin release mode
+		gin.SetMode(gin.ReleaseMode)
+		// disable console color
+		gin.DisableConsoleColor()
+		// log level info
+		log.SetLevel(log.InfoLevel)
+	}
+
+	// dump wg config file
+	err := UpdateServerConfigWg()
+	util.CheckError("Error while creating WireGuard config file: ", err)
+
+	LoadNodeDetails()
+
+	// Register node on chain if configured
+	if err := RegisterNodeOnChain(); err != nil {
+		log.Printf("Failed to register node on %s: %v", os.Getenv("CHAIN_NAME"), err)
+	}
+
+	go p2p.Init()
+	wg.Add(1)
+
+	if os.Getenv("GRPC_PORT") != "" {
+		wg.Add(1)
+		go RungRPCServer()
+	}
+
+	if os.Getenv("HTTP_PORT") != "" {
+		ginApp := gin.Default()
+		config := cors.DefaultConfig()
+		config.AllowOrigins = []string{os.Getenv("GATEWAY_DOMAIN")}
+		ginApp.Use(cors.New(config))
+		ginApp.Use(helmet.Default())
+
+		ginApp.Use(func(ctx *gin.Context) {
+			ctx.Set("cache", cache.New(60*time.Minute, 10*time.Minute))
+			ctx.Next()
+		})
+
+		ginApp.Use(static.Serve("/", static.LocalFile("./webapp", false)))
+		ginApp.NoRoute(func(c *gin.Context) {
+			c.JSON(404, gin.H{"status": 404, "message": "Invalid Endpoint Request"})
+		})
+
+		api.ApplyRoutes(ginApp)
+		err = ginApp.Run(fmt.Sprintf("%s:%s", os.Getenv("SERVER"), os.Getenv("HTTP_PORT")))
+		util.CheckError("Failed to Start HTTP Server: ", err)
+	}
+
+	wg.Wait()
 }
 
-// GenerateWalletAddressSolana generates a Solana wallet address from the given mnemonic
+// GenerateEthereumWalletAddress generates an Ethereum wallet address from a mnemonic
+func GenerateEthereumWalletAddress(mnemonic string) (string, *ecdsa.PrivateKey, error) {
+	// Generate seed from mnemonic
+	seed := bip39.NewSeed(mnemonic, "")
+
+	// Generate master key
+	masterKey, err := bip32.NewMasterKey(seed)
+	if err != nil {
+		return "", nil, fmt.Errorf("failed to generate master key: %v", err)
+	}
+
+	// Derive Ethereum path
+	path := []uint32{0x80000000 + 44, 0x80000000 + 60, 0x80000000 + 0, 0, 0}
+	key := masterKey
+	for _, i := range path {
+		key, err = key.NewChildKey(i)
+		if err != nil {
+			return "", nil, fmt.Errorf("failed to derive key: %v", err)
+		}
+	}
+
+	// Generate private key
+	privateKey, err := crypto.ToECDSA(key.Key)
+	if err != nil {
+		return "", nil, fmt.Errorf("failed to generate private key: %v", err)
+	}
+
+	// Get public key
+	publicKey := privateKey.Public()
+	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
+	if !ok {
+		return "", nil, fmt.Errorf("failed to get public key")
+	}
+
+	// Get address
+	address := crypto.PubkeyToAddress(*publicKeyECDSA).Hex()
+
+	return address, privateKey, nil
+}
+
+// toChecksumAddress converts an Ethereum address to checksum address
+func toChecksumAddress(address string) string {
+	// Remove 0x prefix if present
+	addr := strings.ToLower(address)
+	if strings.HasPrefix(addr, "0x") {
+		addr = addr[2:]
+	}
+
+	// Calculate hash
+	hash := sha3.NewLegacyKeccak256()
+	hash.Write([]byte(addr))
+	hashBytes := hash.Sum(nil)
+
+	// Convert to checksum address
+	result := make([]byte, len(addr))
+	for i := 0; i < len(addr); i++ {
+		if hashBytes[i/2]&(1<<(4*(1-i%2))) != 0 {
+			result[i] = strings.ToUpper(string(addr[i]))[0]
+		} else {
+			result[i] = addr[i]
+		}
+	}
+
+	return "0x" + string(result)
+}
+
+// GenerateWalletAddressSolanaAndEclipse generates a Solana wallet address from a mnemonic
 func GenerateWalletAddressSolanaAndEclipse(mnemonic string) {
-	// Validate the mnemonic
-	if !bip39.IsMnemonicValid(mnemonic) {
-		fmt.Println("Invalid mnemonic")
-		return
+	// Generate seed from mnemonic
+	seed := bip39.NewSeed(mnemonic, "")
+
+	// Generate master key
+	masterKey, err := bip32.NewMasterKey(seed)
+	if err != nil {
+		log.Fatalf("Failed to generate master key: %v", err)
 	}
-	// mnemonic := "curtain century depth trim slogan stay case human farm ivory case merge"
-	seed := bip39.NewSeed(mnemonic, "") // (mnemonic, password)
-	path := `m/44'/501'/0'/0'`
-	derivedKey, _ := hdwallet.Derived(path, seed)
-	account, _ := types.AccountFromSeed(derivedKey.PrivateKey)
 
-	WalletAddress = account.PublicKey.ToBase58()
+	// Derive Solana path
+	path := []uint32{0x80000000 + 44, 0x80000000 + 501, 0x80000000 + 0, 0, 0}
+	key := masterKey
+	for _, i := range path {
+		key, err = key.NewChildKey(i)
+		if err != nil {
+			log.Fatalf("Failed to derive key: %v", err)
+		}
+	}
 
-	fmt.Printf("Solona OR Eclipse Wallet Address: %s\n", WalletAddress)
+	// Generate keypair
+	keypair, err := types.AccountFromSeed(key.Key)
+	if err != nil {
+		log.Fatalf("Failed to generate keypair: %v", err)
+	}
+
+	// Print address
+	fmt.Printf("Solana Address: %s\n", keypair.PublicKey.ToBase58())
 }
 
-// GenerateWalletAddressSui generates a Sui wallet address from the given mnemonic
+// GenerateWalletAddressSui generates a Sui wallet address from a mnemonic
 func GenerateWalletAddressSui(mnemonic string) {
-	// Validate the mnemonic
-	if !bip39.IsMnemonicValid(mnemonic) {
-		log.Fatal("Invalid mnemonic")
-	}
-	log.Println("Mnemonic:", mnemonic)
-
-	// Derive a seed from the mnemonic
+	// Generate seed from mnemonic
 	seed := bip39.NewSeed(mnemonic, "")
 
-	// Generate a master key using BIP32
+	// Generate master key
 	masterKey, err := bip32.NewMasterKey(seed)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to generate master key: %v", err)
 	}
 
-	// Derive a child key (using the Sui derivation path m/44'/784'/0'/0/0)
-	childKey, err := masterKey.NewChildKey(bip32.FirstHardenedChild + 44)
-	if err != nil {
-		log.Fatal(err)
-	}
-	childKey, err = childKey.NewChildKey(bip32.FirstHardenedChild + 784)
-	if err != nil {
-		log.Fatal(err)
-	}
-	childKey, err = childKey.NewChildKey(bip32.FirstHardenedChild + 0)
-	if err != nil {
-		log.Fatal(err)
-	}
-	childKey, err = childKey.NewChildKey(0)
-	if err != nil {
-		log.Fatal(err)
-	}
-	childKey, err = childKey.NewChildKey(0)
-	if err != nil {
-		log.Fatal(err)
+	// Derive Sui path
+	path := []uint32{0x80000000 + 44, 0x80000000 + 784, 0x80000000 + 0, 0, 0}
+	key := masterKey
+	for _, i := range path {
+		key, err = key.NewChildKey(i)
+		if err != nil {
+			log.Fatalf("Failed to derive key: %v", err)
+		}
 	}
 
-	// Generate ED25519 keys from the child key
-	privateKey := ed25519.NewKeyFromSeed(childKey.Key)
-	publicKey := privateKey.Public().(ed25519.PublicKey)
+	// Generate keypair
+	keypair, err := ed25519.GenerateKey(key.Key)
+	if err != nil {
+		log.Fatalf("Failed to generate keypair: %v", err)
+	}
 
-	log.Println("Private Key:", hex.EncodeToString(privateKey))
-	log.Println("Public Key:", hex.EncodeToString(publicKey))
-
-	// Generate wallet address (using SHA3-256)
-	hash := sha3.New256()
-	hash.Write(publicKey)
-	walletAddress := hash.Sum(nil)
-
-	WalletAddress = "0x" + hex.EncodeToString(walletAddress)
-	log.Println("Sui Wallet Address:", WalletAddress)
+	// Print address
+	fmt.Printf("Sui Address: %s\n", hex.EncodeToString(keypair.Public().(ed25519.PublicKey)))
 }
 
-// GenerateWalletAddressAptos generates an Aptos wallet address from the given mnemonic
+// GenerateWalletAddressAptos generates an Aptos wallet address from a mnemonic
 func GenerateWalletAddressAptos(mnemonic string) {
-	// Validate the mnemonic
-	if !bip39.IsMnemonicValid(mnemonic) {
-		log.Fatal("Invalid mnemonic")
-	}
-	log.Println("Mnemonic:", mnemonic)
-
-	// Derive a seed from the mnemonic
+	// Generate seed from mnemonic
 	seed := bip39.NewSeed(mnemonic, "")
 
-	// Generate a master key using BIP32
+	// Generate master key
 	masterKey, err := bip32.NewMasterKey(seed)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to generate master key: %v", err)
 	}
 
-	// Derive a child key (using the Aptos derivation path m/44'/637'/0'/0/0)
-	childKey, err := masterKey.NewChildKey(bip32.FirstHardenedChild + 44)
-	if err != nil {
-		log.Fatal(err)
-	}
-	childKey, err = childKey.NewChildKey(bip32.FirstHardenedChild + 637)
-	if err != nil {
-		log.Fatal(err)
-	}
-	childKey, err = childKey.NewChildKey(bip32.FirstHardenedChild + 0)
-	if err != nil {
-		log.Fatal(err)
-	}
-	childKey, err = childKey.NewChildKey(0)
-	if err != nil {
-		log.Fatal(err)
-	}
-	childKey, err = childKey.NewChildKey(0)
-	if err != nil {
-		log.Fatal(err)
+	// Derive Aptos path
+	path := []uint32{0x80000000 + 44, 0x80000000 + 637, 0x80000000 + 0, 0, 0}
+	key := masterKey
+	for _, i := range path {
+		key, err = key.NewChildKey(i)
+		if err != nil {
+			log.Fatalf("Failed to derive key: %v", err)
+		}
 	}
 
-	// Generate ED25519 keys from the child key
-	privateKey := ed25519.NewKeyFromSeed(childKey.Key)
-	publicKey := privateKey.Public().(ed25519.PublicKey)
+	// Generate keypair
+	keypair, err := ed25519.GenerateKey(key.Key)
+	if err != nil {
+		log.Fatalf("Failed to generate keypair: %v", err)
+	}
 
-	log.Println("Private Key:", hex.EncodeToString(privateKey))
-	log.Println("Public Key:", hex.EncodeToString(publicKey))
-
-	// Generate wallet address (using SHA3-256)
-	hash := sha3.New256()
-	hash.Write(publicKey)
-	walletAddress := hash.Sum(nil)
-
-	WalletAddress = "0x" + hex.EncodeToString(walletAddress)
-	log.Println("Aptos Wallet Address:", WalletAddress)
+	// Print address
+	fmt.Printf("Aptos Address: %s\n", hex.EncodeToString(keypair.Public().(ed25519.PublicKey)))
 }
 
-func GetCodeHashAndVersion() (string, string) {
-	CodeHash = "4f5610aae32077a92ac570eeff5f3a404052fd94"
-	Version = "1.1.1"
-	return CodeHash, Version
+// RegisterNodeOnChain registers the node on the blockchain
+func RegisterNodeOnChain() error {
+	return web3.RegisterNodeOnChain()
 }
+
+// DeactivateNode deactivates the node on the blockchain
+func DeactivateNode() error {
+	return web3.DeactivateNode()
+}
+
+// GetNodeStatus returns the current status of the node from the blockchain
+func GetNodeStatus() (*web3.NodeStatus, error) {
+	return web3.GetNodeStatus()
+}
+

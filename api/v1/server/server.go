@@ -4,10 +4,10 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/NetSepio/erebrus/core"
-	"github.com/NetSepio/erebrus/model"
-	"github.com/NetSepio/erebrus/util"
-	"github.com/NetSepio/erebrus/util/pkg/speedtest"
+	"github.com/NetSepio/beacon/core"
+	"github.com/NetSepio/beacon/model"
+	"github.com/NetSepio/beacon/util"
+	"github.com/NetSepio/beacon/util/pkg/speedtest"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"

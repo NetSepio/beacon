@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/NetSepio/erebrus/core"
+	"github.com/NetSepio/beacon/util"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -38,7 +38,7 @@ func GetChallengeId(c *gin.Context) {
 			"err": "empty Wallet Address",
 		}).Error("failed to create client")
 
-		response := core.MakeErrorResponse(403, "Empty Wallet Address", nil, nil, nil)
+		response := util.MakeErrorResponse(403, "Empty Wallet Address", nil, nil, nil)
 		c.JSON(http.StatusForbidden, response)
 		return
 	}
@@ -48,7 +48,7 @@ func GetChallengeId(c *gin.Context) {
 			"err": "empty Chain name",
 		}).Error("failed to create client")
 
-		response := core.MakeErrorResponse(403, "Empty Wallet Address", nil, nil, nil)
+		response := util.MakeErrorResponse(403, "Empty Wallet Address", nil, nil, nil)
 		c.JSON(http.StatusForbidden, response)
 		return
 	}
@@ -60,12 +60,12 @@ func GetChallengeId(c *gin.Context) {
 		switch err {
 		case ErrInvalidChain:
 			log.WithFields(log.Fields{"err": ErrInvalidChain}).Error("failed to create client")
-			response := core.MakeErrorResponse(http.StatusNotAcceptable, ErrInvalidChain.Error()+info, nil, nil, nil)
+			response := util.MakeErrorResponse(http.StatusNotAcceptable, ErrInvalidChain.Error()+info, nil, nil, nil)
 			c.JSON(http.StatusNotAcceptable, response)
 			return
 		case ErrInvalidAddress:
 			log.WithFields(log.Fields{"err": ErrInvalidAddress}).Error("failed to create client")
-			response := core.MakeErrorResponse(http.StatusNotAcceptable, ErrInvalidAddress.Error(), nil, nil, nil)
+			response := util.MakeErrorResponse(http.StatusNotAcceptable, ErrInvalidAddress.Error(), nil, nil, nil)
 			c.JSON(http.StatusNotAcceptable, response)
 			return
 		}
@@ -77,7 +77,7 @@ func GetChallengeId(c *gin.Context) {
 		log.WithFields(log.Fields{
 			"err": err,
 		}).Error("failed to create FlowId")
-		response := core.MakeErrorResponse(500, err.Error(), nil, nil, nil)
+		response := util.MakeErrorResponse(500, err.Error(), nil, nil, nil)
 		c.JSON(http.StatusInternalServerError, response)
 		return
 	}

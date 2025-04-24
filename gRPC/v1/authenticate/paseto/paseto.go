@@ -6,8 +6,8 @@ import (
 	"fmt"
 
 	gopaseto "aidanwoods.dev/go-paseto"
-	"github.com/NetSepio/erebrus/util/pkg/auth"
-	"github.com/NetSepio/erebrus/util/pkg/claims"
+	"github.com/NetSepio/beacon/util/pkg/auth"
+	"github.com/NetSepio/beacon/util/pkg/claims"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/metadata"
 )

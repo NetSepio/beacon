@@ -8,7 +8,7 @@ import (
 	"time"
 
 	gopaseto "aidanwoods.dev/go-paseto"
-	"github.com/NetSepio/erebrus/util/pkg/claims"
+	"github.com/NetSepio/beacon/util/pkg/claims"
 	log "github.com/sirupsen/logrus"
 )
 

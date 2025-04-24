@@ -2,54 +2,105 @@ name: Build and Release Beacon Binary
 
 on:
   push:
-    branches:
-      - node-features # Triggers only on pushes to the node-features branch
+    tags:
+      - 'v*' # Trigger workflow on version tags (e.g., v1.0.0)
+
+permissions:
+  contents: write
 
 jobs:
   build:
+    name: Build and Release
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        include:
+          - os: linux
+            arch: amd64
+          - os: linux
+            arch: arm64
+          - os: linux
+            arch: arm
+            goarm: 7
+          - os: windows
+            arch: amd64
+          - os: windows
+            arch: arm64
+          - os: darwin
+            arch: amd64
+          - os: darwin
+            arch: arm64
+
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v3
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v4
         with:
-          go-version: stable
+          go-version: 1.22
 
-      - name: Build Binary
+      - name: Get commit hash
+        id: get-commit
+        run: echo "commit=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Set environment variables
         run: |
-          go mod tidy
-          go build -o beacon
+          APP_NAME="erebrus-beacon"
+          EXT=""
+          if [[ "${{ matrix.os }}" == "windows" ]]; then
+            EXT=".exe"
+          fi
 
-      - name: Upload Binary as Artifact
+          SUFFIX="${{ matrix.os }}-${{ matrix.arch }}"
+          if [[ "${{ matrix.arch }}" == "arm" ]]; then
+            SUFFIX="${{ matrix.os }}-${{ matrix.arch }}v${{ matrix.goarm }}"
+          fi
+
+          OUT_FILE="${APP_NAME}-${{ github.ref_name }}-${SUFFIX}"
+
+          echo "APP_NAME=$APP_NAME" >> $GITHUB_ENV
+          echo "EXT=$EXT" >> $GITHUB_ENV
+          echo "SUFFIX=$SUFFIX" >> $GITHUB_ENV
+          echo "OUT_FILE=$OUT_FILE" >> $GITHUB_ENV
+
+      - name: Build binary
+        run: |
+          export CGO_ENABLED=0
+          if [[ "${{ matrix.arch }}" == "arm" ]]; then
+            export GOARM=${{ matrix.goarm }}
+          fi
+          GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build \
+            -ldflags "-X main.version=${{ github.ref_name }} -X main.codeHash=${{ steps.get-commit.outputs.commit }} -X main.goVersion=$(go version | awk '{print $3}')" \
+            -o ${{ env.OUT_FILE }}${{ env.EXT }} main.go
+
+      - name: Generate SHA256 checksum
+        run: sha256sum ${{ env.OUT_FILE }}${{ env.EXT }} > ${{ env.OUT_FILE }}.sha256
+
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: beacon-binary
-          path: beacon
+          name: ${{ env.OUT_FILE }}
+          path: |
+            ${{ env.OUT_FILE }}${{ env.EXT }}
+            ${{ env.OUT_FILE }}.sha256
 
   release:
+    name: Create GitHub Release
     needs: build
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Get Commit SHA
-        id: get_sha
-        run: echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
-
-      - name: Download Artifact
+      - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          name: beacon-binary
+          path: ./artifacts
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ env.sha }}
-          files: beacon
+          files: ./artifacts/**/*
         env:
-          GITHUB_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          TOKEN: ${{ secrets.GHCR_TOKEN }}
+          

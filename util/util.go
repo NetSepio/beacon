@@ -195,3 +195,31 @@ func GenerateRandomString(s int) (string, error) {
 	b, err := GenerateRandomBytes(s)
 	return base64.URLEncoding.EncodeToString(b), err
 }
+
+
+// success response message
+func MakeSucessResponse(status int64, message string, server *model.Server, client *model.Client, clients []*model.Client) *model.Response {
+	return &model.Response{
+		Status:  status,
+		Message: message,
+		Server:  server,
+		Client:  client,
+		Clients: clients,
+		Success: true,
+		Error:   "",
+	}
+}
+
+// error response message
+func MakeErrorResponse(status int64, err string, server *model.Server, client *model.Client, clients []*model.Client) *model.Response {
+	return &model.Response{
+		Status:  status,
+		Message: "",
+		Server:  server,
+		Client:  client,
+		Clients: clients,
+		Success: false,
+		Error:   err,
+	}
+
+}

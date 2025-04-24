@@ -8,8 +8,8 @@ go build -ldflags "-X main.version=1.0.0 -X main.codeHash=$(git rev-parse HEAD)"
 ## Install and Deploy using binary
 
 1. Make sure all setup were done
-2. Download the suitable binary for your operating system from [here](https://github.com/NetSepio/erebrus/releases/)
-3. create a .env file in same directory and define the environment for erebrus . you can use template from [.sample-env](https://github.com/NetSepio/erebrus/blob/main/.sample-env)
+2. Download the suitable binary for your operating system from [here](https://github.com/NetSepio/beacon/releases/)
+3. create a .env file in same directory and define the environment for erebrus . you can use template from [.sample-env](https://github.com/NetSepio/beacon/blob/main/.sample-env)
 4. Run
 
 ## Install and Deploy using Docker
@@ -47,7 +47,7 @@ erebrus
 
 or
 ```
-docker run -d -p 9080:9080/tcp -p 51820:51820/udp --cap-add=NET_ADMIN --cap-add=SYS_MODULE --sysctl="net.ipv4.conf.all.src_valid_mark=1" --sysctl="net.ipv6.conf.all.forwarding=1" --restart unless-stopped -v /home/ubuntu/erebrus/wireguard/:/etc/wireguard/ --name erebrus --env-file .env ghcr.io/netsepio/erebrus:main
+docker run -d -p 9080:9080/tcp -p 51820:51820/udp --cap-add=NET_ADMIN --cap-add=SYS_MODULE --sysctl="net.ipv4.conf.all.src_valid_mark=1" --sysctl="net.ipv6.conf.all.forwarding=1" --restart unless-stopped -v /home/ubuntu/erebrus/wireguard/:/etc/wireguard/ --name erebrus --env-file .env ghcr.io/netsepio/beacon:main
 ```
 4. Use the following commands
 ```

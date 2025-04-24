@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/NetSepio/erebrus/model"
+	"github.com/NetSepio/beacon/model"
 )
 
 func TestCreateClient(t *testing.T) {
